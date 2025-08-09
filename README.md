@@ -5,10 +5,11 @@ A professional .NET 8 Web API backend for the Employee Asset Management System, 
 ## Features
 
 - **Authentication & Authorization**: JWT-based authentication with role-based access control (User/Admin)
-- **Asset Management**: Full CRUD operations for company assets
+- **Asset Management**: Full CRUD operations for company assets with image support
 - **Asset Requests**: Users can request assets, admins can approve/reject
-- **User Management**: User registration, login, and profile management
-- **Database**: PostgreSQL with Entity Framework Core
+- **User Management**: User registration, login, and profile management with profile images
+- **Image Management**: Professional image upload, storage, and serving for assets and user profiles
+- **Database**: PostgreSQL with Entity Framework Core and automatic migrations
 - **API Documentation**: Swagger/OpenAPI integration
 - **CORS**: Configured for React frontend
 - **AutoMapper**: Object-to-object mapping
@@ -70,6 +71,99 @@ Update the connection string in `appsettings.json`:
 
 Replace `your_password` with your actual PostgreSQL password.
 
+### 4. Database Migrations
+
+The application uses Entity Framework Core migrations for database schema management. After making changes to models, you need to create and apply migrations.
+
+#### Install Entity Framework Tools (if not already installed)
+```bash
+dotnet tool install --global dotnet-ef
+```
+
+#### Create a New Migration
+```bash
+# Navigate to the API project directory
+cd AssetManagement.API
+
+# Create a new migration
+dotnet ef migrations add MigrationName
+
+# Examples:
+dotnet ef migrations add AddProfileImageUrlToUser
+dotnet ef migrations add AddNewFeature
+dotnet ef migrations add UpdateAssetModel
+```
+
+#### Apply Migrations to Database
+```bash
+# Apply all pending migrations
+dotnet ef database update
+
+# Apply to a specific migration
+dotnet ef database update MigrationName
+
+# Apply to the latest migration
+dotnet ef database update
+```
+
+#### Migration Management Commands
+```bash
+# List all migrations
+dotnet ef migrations list
+
+# Remove the last migration (if not applied to database)
+dotnet ef migrations remove
+
+# Generate SQL script for migrations (without applying)
+dotnet ef migrations script
+
+# Generate SQL script from specific migration to latest
+dotnet ef migrations script FromMigrationName
+
+# Update database to a specific migration
+dotnet ef database update MigrationName
+
+# Rollback to a previous migration
+dotnet ef database update PreviousMigrationName
+```
+
+#### Common Migration Scenarios
+
+**Adding a New Column:**
+```bash
+# 1. Update your model (e.g., add ProfileImageUrl to User)
+# 2. Create migration
+dotnet ef migrations add AddProfileImageUrlToUser
+# 3. Apply migration
+dotnet ef database update
+```
+
+**Updating Existing Models:**
+```bash
+# 1. Modify your model properties
+# 2. Create migration
+dotnet ef migrations add UpdateUserModel
+# 3. Apply migration
+dotnet ef database update
+```
+
+**Adding New Entities:**
+```bash
+# 1. Create new model class
+# 2. Add to DbContext
+# 3. Create migration
+dotnet ef migrations add AddNewEntity
+# 4. Apply migration
+dotnet ef database update
+```
+
+**⚠️ Important Notes:**
+- **Always backup your database** before running migrations
+- **Stop the API** before running migrations to avoid file locks
+- **Test migrations** in development before applying to production
+- **Review generated migration files** before applying
+- **Use meaningful migration names** that describe the change
+
 ## How to Run
 
 ### Using Visual Studio
@@ -103,6 +197,7 @@ The API will be available at:
 - `POST /api/assets` - Create asset (admin only)
 - `PUT /api/assets/{id}` - Update asset (admin only)
 - `DELETE /api/assets/{id}` - Delete asset (admin only)
+- `GET /api/assets/images/{fileName}` - Get asset image (public)
 
 ### Asset Requests
 - `GET /api/asset-requests` - Get asset requests (authenticated)
@@ -113,6 +208,9 @@ The API will be available at:
 ### Users
 - `GET /api/users` - Get all users (admin only)
 - `GET /api/users/{id}` - Get user by ID (admin only)
+- `POST /api/users/{id}/profile-image` - Upload user profile image (admin only)
+- `GET /api/users/{id}/profile-image` - Get user profile image (public)
+- `DELETE /api/users/{id}/profile-image` - Delete user profile image (admin only)
 
 ### Debug & Testing
 - `GET /api/auth/test` - Test database connection and DateTime handling
@@ -204,6 +302,13 @@ The API is configured to allow requests from:
    - Check CORS settings
    - Ensure API is running on correct port
 
+5. **Migration Issues**
+   - Ensure Entity Framework tools are installed: `dotnet tool install --global dotnet-ef`
+   - Stop the API before running migrations to avoid file locks
+   - Check for build errors before creating migrations
+   - Verify database connection before applying migrations
+   - Use `dotnet ef migrations list` to check migration status
+
 ### Debug Endpoints
 
 Use these endpoints to troubleshoot:
@@ -228,9 +333,15 @@ AssetManagement.API/
 ├── Controllers/          # API endpoints
 ├── Data/                # Database context and seeding
 ├── DTOs/                # Data transfer objects
+├── Enums/               # Application enums and constants
 ├── Mapping/             # AutoMapper profiles
 ├── Models/              # Entity models
 ├── Services/            # Business logic services
+├── Swagger/             # Swagger configuration
+├── wwwroot/             # Static files and uploads
+│   └── uploads/         # File uploads directory
+│       ├── assets/      # Asset images
+│       └── profiles/    # User profile images
 └── Program.cs           # Application entry point
 ```
 
@@ -243,6 +354,32 @@ AssetManagement.API/
 5. **Controller**: Create API endpoints
 6. **Testing**: Use Swagger UI or debug endpoints
 
+## Image Management
+
+The API provides comprehensive image management for both assets and user profiles:
+
+### Asset Images
+- **Upload**: Images are uploaded when creating/updating assets
+- **Storage**: Stored in `wwwroot/uploads/assets/` directory
+- **Serving**: Accessible via `/api/assets/images/{fileName}` endpoint
+- **Formats**: Supports JPG, PNG, GIF, BMP, WebP
+- **Size Limit**: Maximum 5MB per image
+- **Security**: UUID-based filenames prevent path traversal
+
+### User Profile Images
+- **Upload**: Profile images can be uploaded via `/api/users/{id}/profile-image`
+- **Storage**: Stored in `wwwroot/uploads/profiles/` directory
+- **Serving**: Accessible via `/api/users/{id}/profile-image` endpoint
+- **Management**: Full CRUD operations (upload, retrieve, delete)
+- **Authorization**: Upload/delete require admin role, retrieval is public
+
+### File Handling Features
+- **Automatic Cleanup**: Old images are automatically deleted on updates
+- **Content Type Detection**: Automatic MIME type detection
+- **Directory Creation**: Upload directories are created automatically
+- **Error Handling**: Comprehensive validation and error responses
+- **Streaming**: Efficient file serving without memory buffering
+
 ## Production Considerations
 
 1. **Security**:
@@ -250,22 +387,28 @@ AssetManagement.API/
    - Enable HTTPS
    - Configure proper CORS origins
    - Use environment variables for secrets
+   - Validate file uploads and types
 
 2. **Database**:
    - Use connection pooling
    - Configure proper indexes
    - Set up database migrations
+   - Regular backup of image metadata
 
 3. **Performance**:
    - Enable response compression
    - Configure caching
    - Use async/await patterns
+   - Consider CDN for image serving
 
-4. **Monitoring**:
+4. **File Storage**:
+   - Monitor disk space usage
+   - Implement file cleanup policies
+   - Consider cloud storage for scalability
+   - Backup uploaded files
+
+5. **Monitoring**:
    - Add logging
    - Configure health checks
    - Set up application insights
-
-## License
-
-This project is for educational purposes. Feel free to use and modify as needed.
+   - Monitor file upload/download metrics
