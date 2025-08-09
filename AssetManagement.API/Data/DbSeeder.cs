@@ -115,13 +115,13 @@ public static class DbSeeder
 
         var assets = new List<Asset>
         {
-            CreateAsset("MacBook Pro 16-inch", laptopCategory.Id, "MBP-2023-001", "2023-01-15", now),
-            CreateAsset("Dell XPS 13", laptopCategory.Id, "DLL-2023-002", "2023-02-20", now),
-            CreateAsset("iPhone 15 Pro", phoneCategory.Id, "IPH-2023-003", "2023-03-10", now),
-            CreateAsset("Samsung Galaxy S24", phoneCategory.Id, "SMS-2023-004", "2023-03-15", now),
-            CreateAsset("Dell UltraSharp 27-inch Monitor", monitorCategory.Id, "MON-2023-005", "2023-01-30", now),
-            CreateAsset("iPad Pro 12.9-inch", tabletCategory.Id, "TAB-2023-006", "2023-02-25", now),
-            CreateAsset("HP EliteDesk Desktop", desktopCategory.Id, "DSK-2023-007", "2023-01-10", now)
+            CreateAsset("MacBook Pro 16-inch", laptopCategory.Id, "MBP-2023-001", "2023-01-15", "macbook-pro-16-2023.jpg", now),
+            CreateAsset("Dell XPS 13", laptopCategory.Id, "DLL-2023-002", "2023-02-20","dell-xps-13-2023.jpg", now),
+            CreateAsset("iPhone 15 Pro", phoneCategory.Id, "IPH-2023-003", "2023-03-10", "iphone-15-pro-2023.jpg", now),
+            CreateAsset("Samsung Galaxy S24", phoneCategory.Id, "SMS-2023-004", "2023-03-15", "samsung-galaxy-s24-2024.jpg", now),
+            CreateAsset("Dell UltraSharp 27-inch Monitor", monitorCategory.Id, "MON-2023-005", "2023-01-30", "dell-ultrasharp-27-2023.jpg", now),
+            CreateAsset("iPad Pro 12.9-inch", tabletCategory.Id, "TAB-2023-006", "2023-02-25", "ipad-pro-12-9-2023.jpg", now),
+            CreateAsset("HP EliteDesk Desktop", desktopCategory.Id, "DSK-2023-007", "2023-01-10", "hp-elitedesk-2023.jpg", now)
         };
 
         context.Assets.AddRange(assets);
@@ -129,11 +129,11 @@ public static class DbSeeder
         await context.SaveChangesAsync();
     }
 
-    private static Asset CreateAsset(string name, Guid categoryId, string serialNumber, string purchaseDateStr, DateTime now)
+    private static Asset CreateAsset(string name, Guid categoryId, string serialNumber, string purchaseDateStr, string imageUrl, DateTime now)
     {
         var purchaseDate = DateTime.Parse(purchaseDateStr);
         var utcPurchaseDate = DateTime.SpecifyKind(purchaseDate, DateTimeKind.Utc);
-        
+
         return new Asset
         {
             Id = Guid.NewGuid(),
@@ -141,6 +141,7 @@ public static class DbSeeder
             CategoryId = categoryId,
             SerialNumber = serialNumber,
             PurchaseDate = utcPurchaseDate,
+            ImageUrl = imageUrl,
             Status = AssetStatus.Available,
             CreatedAt = now,
             UpdatedAt = now
