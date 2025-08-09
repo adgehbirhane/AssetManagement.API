@@ -33,6 +33,9 @@ public class User
     
     public DateTime UpdatedAt { get; set; }
     
+    [MaxLength(500)]
+    public string? ProfileImageUrl { get; set; }
+    
     // Navigation properties
     public virtual ICollection<AssetRequest> AssetRequests { get; set; } = new List<AssetRequest>();
     public virtual ICollection<Asset> AssignedAssets { get; set; } = new List<Asset>();
