@@ -47,6 +47,131 @@ public class AssetRequestsController : ControllerBase
             query = query.Where(ar => ar.UserId == userGuid);
         }
 
+        // Apply search filter
+        if (!string.IsNullOrEmpty(parameters.Search))
+        {
+            query = query.Where(ar =>
+                ar.Asset.Name.ToLower().Contains(parameters.Search.ToLower()) ||
+                ar.Asset.SerialNumber.ToLower().Contains(parameters.Search.ToLower()) ||
+                ar.User.FirstName.ToLower().Contains(parameters.Search.ToLower()) ||
+                ar.User.LastName.ToLower().Contains(parameters.Search.ToLower()) ||
+                ar.User.Email.ToLower().Contains(parameters.Search.ToLower()));
+        }
+
+        // Apply status filter
+        if (!string.IsNullOrEmpty(parameters.Status))
+        {
+            if (Enum.TryParse<AssetRequestStatus>(parameters.Status, out var status))
+            {
+                query = query.Where(ar => ar.Status == status);
+            }
+        }
+
+        // Apply requested date range filter
+        if (parameters.RequestedFrom.HasValue)
+        {
+            query = query.Where(ar => ar.RequestedAt >= parameters.RequestedFrom.Value);
+        }
+        if (parameters.RequestedTo.HasValue)
+        {
+            query = query.Where(ar => ar.RequestedAt <= parameters.RequestedTo.Value);
+        }
+
+        var total = await query.CountAsync();
+        var totalPages = (int)Math.Ceiling((double)total / parameters.PageSize);
+
+        var assetRequests = await query
+            .OrderByDescending(ar => ar.RequestedAt)
+            .Skip((parameters.Page - 1) * parameters.PageSize)
+            .Take(parameters.PageSize)
+            .ToListAsync();
+
+        // Convert to DTOs with string status values
+        var assetRequestDtos = assetRequests.Select(ar => new AssetRequestDto
+        {
+            Id = ar.Id,
+            AssetId = ar.AssetId,
+            UserId = ar.UserId,
+            Status = ar.Status.ToString(),
+            RequestedAt = ar.RequestedAt,
+            ProcessedAt = ar.ProcessedAt,
+            ProcessedById = ar.ProcessedById,
+            Asset = new AssetDto
+            {
+                Id = ar.Asset.Id,
+                Name = ar.Asset.Name,
+                CategoryId = ar.Asset.CategoryId,
+                Category = new CategoryDto
+                {
+                    Id = ar.Asset.Category.Id,
+                    Name = ar.Asset.Category.Name,
+                    Description = ar.Asset.Category.Description,
+                    Status = ar.Asset.Category.Status.ToString(),
+                    CreatedAt = ar.Asset.Category.CreatedAt,
+                    UpdatedAt = ar.Asset.Category.UpdatedAt
+                },
+                SerialNumber = ar.Asset.SerialNumber,
+                PurchaseDate = ar.Asset.PurchaseDate,
+                Status = ar.Asset.Status.ToString(),
+                AssignedToId = ar.Asset.AssignedToId,
+                AssignedAt = ar.Asset.AssignedAt,
+                ImageUrl = ar.Asset.ImageUrl,
+                CreatedAt = ar.Asset.CreatedAt,
+                UpdatedAt = ar.Asset.UpdatedAt
+            },
+            User = new UserDto
+            {
+                Id = ar.User.Id,
+                Email = ar.User.Email,
+                FirstName = ar.User.FirstName,
+                LastName = ar.User.LastName,
+                Role = ar.User.Role.ToString(),
+                ProfileImageUrl = ar.User.ProfileImageUrl,
+                CreatedAt = ar.User.CreatedAt,
+                UpdatedAt = ar.User.UpdatedAt
+            },
+            ProcessedBy = ar.ProcessedBy != null ? new UserDto
+            {
+                Id = ar.ProcessedBy.Id,
+                Email = ar.ProcessedBy.Email,
+                FirstName = ar.ProcessedBy.FirstName,
+                LastName = ar.ProcessedBy.LastName,
+                Role = ar.ProcessedBy.Role.ToString(),
+                CreatedAt = ar.ProcessedBy.CreatedAt,
+                UpdatedAt = ar.ProcessedBy.UpdatedAt
+            } : null
+        }).ToList();
+
+        return Ok(new AssetRequestListResponse
+        {
+            Data = assetRequestDtos,
+            Total = total,
+            Page = parameters.Page,
+            PageSize = parameters.PageSize,
+            TotalPages = totalPages
+        });
+    }
+
+
+    [HttpGet("self")]
+    public async Task<ActionResult<AssetRequestListResponse>> GetMyAssetRequests([FromQuery] AssetRequestQueryParameters parameters)
+    {
+        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
+
+        var query = _context.AssetRequests
+            .Include(ar => ar.Asset)
+               .ThenInclude(a => a.Category)
+            .Include(ar => ar.User)
+            .Include(ar => ar.ProcessedBy)
+            .AsQueryable();
+
+            if (string.IsNullOrEmpty(userId) || !Guid.TryParse(userId, out var userGuid))
+            {
+                return Unauthorized();
+            }
+            query = query.Where(ar => ar.UserId == userGuid);
+
         // Apply status filter
         if (!string.IsNullOrEmpty(parameters.Status))
         {
@@ -105,6 +230,7 @@ public class AssetRequestsController : ControllerBase
                 FirstName = ar.User.FirstName,
                 LastName = ar.User.LastName,
                 Role = ar.User.Role.ToString(),
+                ProfileImageUrl = ar.User.ProfileImageUrl,
                 CreatedAt = ar.User.CreatedAt,
                 UpdatedAt = ar.User.UpdatedAt
             },
@@ -129,6 +255,7 @@ public class AssetRequestsController : ControllerBase
             TotalPages = totalPages
         });
     }
+
 
     [HttpPost]
     public async Task<ActionResult<ApiResponse<AssetRequestDto>>> CreateAssetRequest([FromBody] CreateAssetRequestDto request)
@@ -229,7 +356,7 @@ public class AssetRequestsController : ControllerBase
                .ThenInclude(a => a.Category)
             .Include(ar => ar.User)
             .Include(ar => ar.ProcessedBy)
-            .FirstOrDefaultAsync(ar => ar.Id == id);
+            .FirstOrDefaultAsync(ar => ar.User.Id == id);
 
         if (assetRequest == null)
         {

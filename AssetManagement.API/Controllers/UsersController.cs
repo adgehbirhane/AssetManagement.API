@@ -5,12 +5,13 @@ using AssetManagement.API.Data;
 using AssetManagement.API.DTOs;
 using AutoMapper;
 using System.IO;
+using System.Security.Claims;
 
 namespace AssetManagement.API.Controllers;
 
 [ApiController]
 [Route("api/users")]
-[Authorize(Roles = "Admin")]
+[Authorize]
 public class UsersController : ControllerBase
 {
     private readonly ApplicationDbContext _context;
@@ -23,6 +24,7 @@ public class UsersController : ControllerBase
     }
 
     [HttpGet]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<PaginatedResponse<UserDto>>> GetUsers([FromQuery] QueryParameters parameters)
     {
         var query = _context.Users.AsQueryable();
@@ -80,11 +82,108 @@ public class UsersController : ControllerBase
         });
     }
 
+    [HttpPut("{id}")]
+    public async Task<ActionResult<ApiResponse<UserDto>>> UpdateUser(Guid id, [FromBody] UpdateProfileRequest request)
+    {
+        try
+        {
+            // Check if the user is updating their own profile or if they're an admin
+            var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var isAdmin = User.IsInRole("Admin");
+            
+            if (string.IsNullOrEmpty(currentUserId) || !Guid.TryParse(currentUserId, out var currentUserGuid))
+            {
+                return Unauthorized(new ApiResponse<UserDto>
+                {
+                    Success = false,
+                    Message = "Invalid or expired token"
+                });
+            }
+
+            // Only allow users to update their own profile, or admins to update any profile
+            if (!isAdmin && currentUserGuid != id)
+            {
+                return Forbid();
+            }
+
+            var user = await _context.Users.FindAsync(id);
+            if (user == null)
+            {
+                return NotFound(new ApiResponse<UserDto>
+                {
+                    Success = false,
+                    Message = "User not found"
+                });
+            }
+
+            // Check if email is being changed and if it's already taken
+            if (!string.IsNullOrEmpty(request.Email) && request.Email != user.Email)
+            {
+                if (await _context.Users.AnyAsync(u => u.Email == request.Email))
+                {
+                    return BadRequest(new ApiResponse<UserDto>
+                    {
+                        Success = false,
+                        Message = "Email already exists"
+                    });
+                }
+            }
+
+            // Update user properties
+            if (!string.IsNullOrEmpty(request.FirstName))
+                user.FirstName = request.FirstName;
+            if (!string.IsNullOrEmpty(request.LastName))
+                user.LastName = request.LastName;
+            if (!string.IsNullOrEmpty(request.Email))
+                user.Email = request.Email;
+
+            user.UpdatedAt = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+
+            var userDto = _mapper.Map<UserDto>(user);
+
+            return Ok(new ApiResponse<UserDto>
+            {
+                Data = userDto,
+                Message = "Profile updated successfully"
+            });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new ApiResponse<UserDto>
+            {
+                Success = false,
+                Message = "Internal server error occurred while updating profile"
+            });
+        }
+    }
+
     [HttpPost("{id}/profile-image")]
+    [Authorize]
     public async Task<ActionResult<ApiResponse<UserDto>>> UploadProfileImage(Guid id, IFormFile imageFile)
     {
         try
         {
+            // Check if the user is uploading to their own profile or if they're an admin
+            var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var isAdmin = User.IsInRole("Admin");
+            
+            if (string.IsNullOrEmpty(currentUserId) || !Guid.TryParse(currentUserId, out var currentUserGuid))
+            {
+                return Unauthorized(new ApiResponse<UserDto>
+                {
+                    Success = false,
+                    Message = "Invalid or expired token"
+                });
+            }
+
+            // Only allow users to upload to their own profile, or admins to upload to any profile
+            if (!isAdmin && currentUserGuid != id)
+            {
+                return Forbid();
+            }
+
             var user = await _context.Users.FindAsync(id);
             if (user == null)
             {
@@ -205,10 +304,30 @@ public class UsersController : ControllerBase
     }
 
     [HttpDelete("{id}/profile-image")]
+    [Authorize]
     public async Task<ActionResult<ApiResponse<object>>> DeleteProfileImage(Guid id)
     {
         try
         {
+            // Check if the user is deleting from their own profile or if they're an admin
+            var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var isAdmin = User.IsInRole("Admin");
+            
+            if (string.IsNullOrEmpty(currentUserId) || !Guid.TryParse(currentUserId, out var currentUserGuid))
+            {
+                return Unauthorized(new ApiResponse<object>
+                {
+                    Success = false,
+                    Message = "Invalid or expired token"
+                });
+            }
+
+            // Only allow users to delete from their own profile, or admins to delete from any profile
+            if (!isAdmin && currentUserGuid != id)
+            {
+                return Forbid();
+            }
+
             var user = await _context.Users.FindAsync(id);
             if (user == null)
             {

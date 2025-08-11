@@ -40,25 +40,14 @@ public class CategoriesController : ControllerBase
                 c.Description.ToLower().Contains(search));
         }
 
-        // Apply status filter
-        if (!string.IsNullOrEmpty(parameters.Status))
-        {
-            // Try to parse as enum string first
-            if (Enum.TryParse<CategoryStatus>(parameters.Status, out var status))
-            {
-                query = query.Where(c => c.Status == status);
-            }
-            // If that fails, try to parse as integer
-            else if (int.TryParse(parameters.Status, out var statusInt))
-            {
-                query = query.Where(c => (int)c.Status == statusInt);
-            }
-        }
+        // Filter only active category
+        query = query.Where(c => c.Status == CategoryStatus.ACTIVE);
 
         var total = await query.CountAsync();
         var totalPages = (int)Math.Ceiling((double)total / parameters.PageSize);
 
         var categories = await query
+            .Include(c => c.Assets)
             .OrderBy(c => c.Name)
             .Skip((parameters.Page - 1) * parameters.PageSize)
             .Take(parameters.PageSize)
@@ -71,6 +60,7 @@ public class CategoriesController : ControllerBase
             Name = c.Name,
             Description = c.Description,
             Status = c.Status.ToString(),
+            AssetsCount = c.Assets.Count,
             CreatedAt = c.CreatedAt,
             UpdatedAt = c.UpdatedAt
         }).ToList();
@@ -85,38 +75,101 @@ public class CategoriesController : ControllerBase
         });
     }
 
-    [HttpGet("{id}")]
-    public async Task<ActionResult<ApiResponse<CategoryDto>>> GetCategory(Guid id)
-    {
-        var category = await _context.Categories.FindAsync(id);
-
-        if (category == null)
+        [HttpGet("all")]
+        [Authorize]
+        public async Task<ActionResult<PaginatedResponse<CategoryDto>>> GetAllCategories([FromQuery] CategoryQueryParameters parameters)
         {
-            return NotFound(new ApiResponse<CategoryDto>
+            var query = _context.Categories.AsQueryable();
+
+            // Apply search filter
+            if (!string.IsNullOrEmpty(parameters.Search))
             {
-                Success = false,
-                Message = "Category not found"
+                var search = parameters.Search.ToLower();
+
+                query = query.Where(c =>
+                    c.Name.ToLower().Contains(search) ||
+                    c.Description.ToLower().Contains(search));
+            }
+
+            // Apply status filter
+            if (!string.IsNullOrEmpty(parameters.Status))
+            {
+                // Try to parse as enum string first
+                if (Enum.TryParse<CategoryStatus>(parameters.Status, out var status))
+                {
+                    query = query.Where(c => c.Status == status);
+                }
+                // If that fails, try to parse as integer
+                else if (int.TryParse(parameters.Status, out var statusInt))
+                {
+                    query = query.Where(c => (int)c.Status == statusInt);
+                }
+            }
+
+            var total = await query.CountAsync();
+            var totalPages = (int)Math.Ceiling((double)total / parameters.PageSize);
+
+            var categories = await query
+                .Include(c => c.Assets)
+                .OrderBy(c => c.Name)
+                .Skip((parameters.Page - 1) * parameters.PageSize)
+                .Take(parameters.PageSize)
+                .ToListAsync();
+
+            // Convert to DTOs with string status values
+            var categoryDtos = categories.Select(c => new CategoryDto
+            {
+                Id = c.Id,
+                Name = c.Name,
+                Description = c.Description,
+                Status = c.Status.ToString(),
+                AssetsCount = c.Assets.Count,
+                CreatedAt = c.CreatedAt,
+                UpdatedAt = c.UpdatedAt
+            }).ToList();
+
+            return Ok(new PaginatedResponse<CategoryDto>
+            {
+                Data = categoryDtos,
+                Total = total,
+                Page = parameters.Page,
+                PageSize = parameters.PageSize,
+                TotalPages = totalPages
             });
         }
 
-        var categoryDto = new CategoryDto
+        [HttpGet("{id}")]
+        public async Task<ActionResult<ApiResponse<CategoryDto>>> GetCategory(Guid id)
         {
-            Id = category.Id,
-            Name = category.Name,
-            Description = category.Description,
-            Status = category.Status.ToString(),
-            CreatedAt = category.CreatedAt,
-            UpdatedAt = category.UpdatedAt
-        };
+            var category = await _context.Categories.FindAsync(id);
 
-        return Ok(new ApiResponse<CategoryDto>
-        {
-            Data = categoryDto,
-            Message = "Category retrieved successfully"
-        });
-    }
+            if (category == null)
+            {
+                return NotFound(new ApiResponse<CategoryDto>
+                {
+                    Success = false,
+                    Message = "Category not found"
+                });
+            }
 
-    [HttpPost]
+            var categoryDto = new CategoryDto
+            {
+                Id = category.Id,
+                Name = category.Name,
+                Description = category.Description,
+                Status = category.Status.ToString(),
+                CreatedAt = category.CreatedAt,
+                UpdatedAt = category.UpdatedAt
+            };
+
+            return Ok(new ApiResponse<CategoryDto>
+            {
+                Data = categoryDto,
+                Message = "Category retrieved successfully"
+            });
+        }
+
+        [HttpPost]
     [Authorize(Roles = "Admin")]
     public async Task<ActionResult<ApiResponse<CategoryDto>>> CreateCategory([FromBody] CreateCategoryDto request)
     {

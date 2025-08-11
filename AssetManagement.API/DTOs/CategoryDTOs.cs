@@ -33,6 +33,7 @@ namespace AssetManagement.API.DTOs
         [Required]
         [EnumDataType(typeof(CategoryStatus))]
         public string Status { get; set; }
+        public int? AssetsCount { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
     }

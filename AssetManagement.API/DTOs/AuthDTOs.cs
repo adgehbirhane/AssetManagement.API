@@ -55,4 +55,16 @@ public class ValidateTokenRequest
     public string Token { get; set; } = string.Empty;
 }
 
+public class UpdateProfileRequest
+{
+    [MaxLength(100)]
+    public string? FirstName { get; set; }
+    
+    [MaxLength(100)]
+    public string? LastName { get; set; }
+    
+    [EmailAddress]
+    public string? Email { get; set; }
+}
+
 

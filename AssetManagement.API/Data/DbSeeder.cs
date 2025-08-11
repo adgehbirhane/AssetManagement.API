@@ -82,8 +82,8 @@ public static class DbSeeder
         var adminUser = new User
         {
             Id = Guid.NewGuid(),
-            Email = "admin@company.com",
-            PasswordHash = passwordService.HashPassword("admin123"),
+            Email = "admin@gmail.com",
+            PasswordHash = passwordService.HashPassword("Admin@123"),
             FirstName = "Admin",
             LastName = "User",
             Role = UserRole.Admin,
@@ -95,8 +95,8 @@ public static class DbSeeder
         var regularUser = new User
         {
             Id = Guid.NewGuid(),
-            Email = "user@company.com",
-            PasswordHash = passwordService.HashPassword("user123"),
+            Email = "user@gmail.com",
+            PasswordHash = passwordService.HashPassword("User@123"),
             FirstName = "Regular",
             LastName = "User",
             Role = UserRole.User,

@@ -158,6 +158,7 @@ public class AuthController : ControllerBase
                 FirstName = user.FirstName,
                 LastName = user.LastName,
                 Role = user.Role.ToString(),
+                ProfileImageUrl = user.ProfileImageUrl,
                 CreatedAt = user.CreatedAt,
                 UpdatedAt = user.UpdatedAt
             };

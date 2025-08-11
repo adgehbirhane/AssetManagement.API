@@ -40,6 +40,9 @@ public class AssetRequestListResponse
 
 public class AssetRequestQueryParameters
 {
+    public string? Search { get; set; }
+    public DateTime? RequestedFrom { get; set; }
+    public DateTime? RequestedTo { get; set; }
     public int Page { get; set; } = 1;
     public int PageSize { get; set; } = 10;
     public string? Status { get; set; }
