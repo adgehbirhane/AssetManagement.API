@@ -1,6 +1,6 @@
 # Asset Management API
 
-A professional .NET 8 Web API backend for the Employee Asset Management System, built with Entity Framework Core, PostgreSQL, and JWT authentication.
+.NET 8 Web API backend for the Employee Asset Management System, built with Entity Framework Core, PostgreSQL, and JWT authentication.
 
 ## Features
 
@@ -8,7 +8,7 @@ A professional .NET 8 Web API backend for the Employee Asset Management System, 
 - **Asset Management**: Full CRUD operations for company assets with image support
 - **Asset Requests**: Users can request assets, admins can approve/reject
 - **User Management**: User registration, login, and profile management with profile images
-- **Image Management**: Professional image upload, storage, and serving for assets and user profiles
+- **Image Management**: Image upload, storage, and serving for assets and user profiles
 - **Database**: PostgreSQL with Entity Framework Core and automatic migrations
 - **API Documentation**: Swagger/OpenAPI integration
 - **CORS**: Configured for React frontend
@@ -54,9 +54,6 @@ Update the JWT secret in `appsettings.json` and `appsettings.Development.json`:
   }
 }
 ```
-
-**Important**: Use a strong, unique secret key in production.
-
 ### 3. Database Connection
 
 Update the connection string in `appsettings.json`:
@@ -68,8 +65,6 @@ Update the connection string in `appsettings.json`:
   }
 }
 ```
-
-Replace `your_password` with your actual PostgreSQL password.
 
 ### 4. Database Migrations
 
@@ -157,13 +152,6 @@ dotnet ef migrations add AddNewEntity
 dotnet ef database update
 ```
 
-**⚠️ Important Notes:**
-- **Always backup your database** before running migrations
-- **Stop the API** before running migrations to avoid file locks
-- **Test migrations** in development before applying to production
-- **Review generated migration files** before applying
-- **Use meaningful migration names** that describe the change
-
 ## How to Run
 
 ### Using Visual Studio
@@ -212,22 +200,18 @@ The API will be available at:
 - `GET /api/users/{id}/profile-image` - Get user profile image (public)
 - `DELETE /api/users/{id}/profile-image` - Delete user profile image (admin only)
 
-### Debug & Testing
-- `GET /api/auth/test` - Test database connection and DateTime handling
-- `GET /api/auth/debug` - Debug authentication and database status (authenticated)
-
 ## Demo Credentials
 
 The application comes with pre-seeded demo data:
 
 ### Admin User
-- **Email**: admin@company.com
-- **Password**: admin123
+- **Email**: admin@gmail.com
+- **Password**: Admin@123
 - **Role**: Admin
 
 ### Regular User
-- **Email**: user@company.com
-- **Password**: user123
+- **Email**: user@gmail.com
+- **Password**: UserW123
 - **Role**: User
 
 ## Sample Assets
@@ -288,15 +272,6 @@ The API is configured to allow requests from:
    - Ensure database exists
    - Verify username/password
 
-2. **DateTime Errors**
-   - The API automatically handles DateTime conversion to UTC
-   - If you see DateTime errors, try the test endpoint: `GET /api/auth/test`
-
-3. **Authentication Issues**
-   - Check JWT secret configuration
-   - Verify token is included in Authorization header
-   - Use debug endpoint: `GET /api/auth/debug`
-
 4. **Frontend Connection Issues**
    - Verify API URL in frontend configuration
    - Check CORS settings
@@ -309,13 +284,6 @@ The API is configured to allow requests from:
    - Verify database connection before applying migrations
    - Use `dotnet ef migrations list` to check migration status
 
-### Debug Endpoints
-
-Use these endpoints to troubleshoot:
-
-- **`GET /api/auth/test`** - Tests database connection and DateTime handling
-- **`GET /api/auth/debug`** - Shows authentication status and database counts (requires authentication)
-
 ### Database Reset
 
 To reset the database and re-seed data:
@@ -324,26 +292,6 @@ To reset the database and re-seed data:
 3. Recreate the database: `CREATE DATABASE asset_mgt_db;`
 4. Restart the application
 
-## Development
-
-### Project Structure
-
-```
-AssetManagement.API/
-├── Controllers/          # API endpoints
-├── Data/                # Database context and seeding
-├── DTOs/                # Data transfer objects
-├── Enums/               # Application enums and constants
-├── Mapping/             # AutoMapper profiles
-├── Models/              # Entity models
-├── Services/            # Business logic services
-├── Swagger/             # Swagger configuration
-├── wwwroot/             # Static files and uploads
-│   └── uploads/         # File uploads directory
-│       ├── assets/      # Asset images
-│       └── profiles/    # User profile images
-└── Program.cs           # Application entry point
-```
 
 ### Adding New Features
 
@@ -353,62 +301,3 @@ AssetManagement.API/
 4. **Mapping**: Configure AutoMapper mappings
 5. **Controller**: Create API endpoints
 6. **Testing**: Use Swagger UI or debug endpoints
-
-## Image Management
-
-The API provides comprehensive image management for both assets and user profiles:
-
-### Asset Images
-- **Upload**: Images are uploaded when creating/updating assets
-- **Storage**: Stored in `wwwroot/uploads/assets/` directory
-- **Serving**: Accessible via `/api/assets/images/{fileName}` endpoint
-- **Formats**: Supports JPG, PNG, GIF, BMP, WebP
-- **Size Limit**: Maximum 5MB per image
-- **Security**: UUID-based filenames prevent path traversal
-
-### User Profile Images
-- **Upload**: Profile images can be uploaded via `/api/users/{id}/profile-image`
-- **Storage**: Stored in `wwwroot/uploads/profiles/` directory
-- **Serving**: Accessible via `/api/users/{id}/profile-image` endpoint
-- **Management**: Full CRUD operations (upload, retrieve, delete)
-- **Authorization**: Upload/delete require admin role, retrieval is public
-
-### File Handling Features
-- **Automatic Cleanup**: Old images are automatically deleted on updates
-- **Content Type Detection**: Automatic MIME type detection
-- **Directory Creation**: Upload directories are created automatically
-- **Error Handling**: Comprehensive validation and error responses
-- **Streaming**: Efficient file serving without memory buffering
-
-## Production Considerations
-
-1. **Security**:
-   - Use strong JWT secrets
-   - Enable HTTPS
-   - Configure proper CORS origins
-   - Use environment variables for secrets
-   - Validate file uploads and types
-
-2. **Database**:
-   - Use connection pooling
-   - Configure proper indexes
-   - Set up database migrations
-   - Regular backup of image metadata
-
-3. **Performance**:
-   - Enable response compression
-   - Configure caching
-   - Use async/await patterns
-   - Consider CDN for image serving
-
-4. **File Storage**:
-   - Monitor disk space usage
-   - Implement file cleanup policies
-   - Consider cloud storage for scalability
-   - Backup uploaded files
-
-5. **Monitoring**:
-   - Add logging
-   - Configure health checks
-   - Set up application insights
-   - Monitor file upload/download metrics
