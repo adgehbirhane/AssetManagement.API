@@ -154,6 +154,11 @@ dotnet ef database update
 
 ## How to Run
 
+**Clone the repository**
+   ```bash
+   git clone https://github.com/adgehbirhane/AssetManagement.API.git
+   ```
+
 ### Using Visual Studio
 
 1. Open the solution in Visual Studio 2022
