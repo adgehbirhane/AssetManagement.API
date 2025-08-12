@@ -1,14 +1,8 @@
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Authorization;
-using System.Security.Claims;
-using AssetManagement.API.Data;
 using AssetManagement.API.DTOs;
-using AssetManagement.API.Models;
-using AssetManagement.API.Services;
-using AssetManagement.API.Enums;
-using AutoMapper;
 using AssetManagement.API.Interfaces;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace AssetManagement.API.Controllers;
 
@@ -16,110 +10,59 @@ namespace AssetManagement.API.Controllers;
 [Route("api/[controller]")]
 public class AuthController : ControllerBase
 {
-    private readonly ApplicationDbContext _context;
-    private readonly IJwtService _jwtService;
-    private readonly IPasswordService _passwordService;
-    private readonly IMapper _mapper;
+    private readonly IAuthRepository _repository;
 
-    public AuthController(
-        ApplicationDbContext context,
-        IJwtService jwtService,
-        IPasswordService passwordService,
-        IMapper mapper)
+    public AuthController(IAuthRepository repository)
     {
-        _context = context;
-        _jwtService = jwtService;
-        _passwordService = passwordService;
-        _mapper = mapper;
+        _repository = repository;
     }
 
     [HttpPost("login")]
     public async Task<ActionResult<ApiResponse<AuthResponse>>> Login([FromBody] LoginRequest request)
     {
-        var user = await _context.Users
-            .FirstOrDefaultAsync(u => u.Email == request.Email);
-
-        if (user == null || !_passwordService.VerifyPassword(request.Password, user.PasswordHash))
+        try
         {
-            return BadRequest(new ApiResponse<AuthResponse>
+            var result = await _repository.Login(request);
+
+            if (!result.Success)
+            {
+                return BadRequest(result);
+            }
+
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new ApiResponse<AuthResponse>
             {
                 Success = false,
-                Message = "Invalid email or password"
+                Message = $"Login failed: {ex.Message}"
             });
         }
-
-        var token = _jwtService.GenerateToken(user);
-        var userDto = new UserDto
-        {
-            Id = user.Id,
-            Email = user.Email,
-            FirstName = user.FirstName,
-            LastName = user.LastName,
-            Role = user.Role.ToString(),
-            CreatedAt = user.CreatedAt,
-            UpdatedAt = user.UpdatedAt
-        };
-
-        return Ok(new ApiResponse<AuthResponse>
-        {
-            Data = new AuthResponse
-            {
-                User = userDto,
-                Token = token
-            },
-            Message = "Login successful"
-        });
     }
 
     [HttpPost("register")]
     public async Task<ActionResult<ApiResponse<AuthResponse>>> Register([FromBody] RegisterRequest request)
     {
-        if (await _context.Users.AnyAsync(u => u.Email == request.Email))
+        try
         {
-            return BadRequest(new ApiResponse<AuthResponse>
+            var result = await _repository.Register(request);
+
+            if (!result.Success)
+            {
+                return BadRequest(result);
+            }
+
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new ApiResponse<AuthResponse>
             {
                 Success = false,
-                Message = "Email already exists"
+                Message = $"Registration failed: {ex.Message}"
             });
         }
-
-        var now = DateTime.UtcNow;
-        var user = new User
-        {
-            Id = Guid.NewGuid(),
-            Email = request.Email,
-            PasswordHash = _passwordService.HashPassword(request.Password),
-            FirstName = request.FirstName,
-            LastName = request.LastName,
-            Role = UserRole.User,
-            CreatedAt = now,
-            UpdatedAt = now
-        };
-
-        _context.Users.Add(user);
-        await _context.SaveChangesAsync();
-
-        var token = _jwtService.GenerateToken(user);
-        var userDto = new UserDto
-        {
-            Id = user.Id,
-            Email = user.Email,
-            FirstName = user.FirstName,
-            LastName = user.LastName,
-            Role = user.Role.ToString(),
-            CreatedAt = user.CreatedAt,
-            UpdatedAt = user.UpdatedAt
-        };
-
-        return Ok(new ApiResponse<AuthResponse>
-        {
-            Data = new AuthResponse
-            {
-                User = userDto,
-                Token = token
-            },
-            Message = "Registration successful"
-        });
     }
 
     [HttpGet("me")]
@@ -128,55 +71,24 @@ public class AuthController : ControllerBase
     {
         try
         {
-            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            
-            if (string.IsNullOrEmpty(userId) || !Guid.TryParse(userId, out var userGuid))
-            {
+            var result = await _repository.GetCurrentUser(User);
 
-                return Unauthorized(new ApiResponse<UserDto>
-                {
-                    Success = false,
-                    Message = "Invalid or expired token"
-                });
+            if (!result.Success)
+            {
+                if (result.Message == "Invalid or expired token")
+                    return Unauthorized(result);
+
+                return NotFound(result);
             }
 
-            var user = await _context.Users
-                .AsNoTracking()
-                .FirstOrDefaultAsync(u => u.Id == userGuid);
-                
-            if (user == null)
-            {
-                return NotFound(new ApiResponse<UserDto>
-                {
-                    Success = false,
-                    Message = "User not found"
-                });
-            }
-            
-            var userDto = new UserDto
-            {
-                Id = user.Id,
-                Email = user.Email,
-                FirstName = user.FirstName,
-                LastName = user.LastName,
-                Role = user.Role.ToString(),
-                ProfileImageUrl = user.ProfileImageUrl,
-                CreatedAt = user.CreatedAt,
-                UpdatedAt = user.UpdatedAt
-            };
-
-            return Ok(new ApiResponse<UserDto>
-            {
-                Data = userDto,
-                Message = "User retrieved successfully"
-            });
+            return Ok(result);
         }
         catch (Exception ex)
         {
             return StatusCode(500, new ApiResponse<UserDto>
             {
                 Success = false,
-                Message = "Internal server error occurred while retrieving user information"
+                Message = $"Failed to retrieve user information: {ex.Message}"
             });
         }
     }
