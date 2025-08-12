@@ -1,13 +1,15 @@
-using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.IdentityModel.Tokens;
-using System.Text;
 using AssetManagement.API.Data;
-using AssetManagement.API.Services;
+using AssetManagement.API.Interfaces;
 using AssetManagement.API.Mapping;
+using AssetManagement.API.Repositories;
+using AssetManagement.API.Services;
 using AssetManagement.API.Swagger;
-using System.Reflection;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using Swashbuckle.AspNetCore.SwaggerGen;
+using System.Reflection;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -105,6 +107,9 @@ builder.Services.AddAutoMapper(typeof(MappingProfile));
 // Register services
 builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<IPasswordService, PasswordService>();
+
+// Add repositories
+builder.Services.AddScoped<IAssetRequestsRepository, AssetRequestsRepository>();
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
