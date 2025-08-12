@@ -18,7 +18,8 @@ public enum AssetRequestStatus
 {
     Pending,
     Approved,
-    Rejected
+    Rejected,
+    // PreAssigned
 }
 
 public enum UserRole

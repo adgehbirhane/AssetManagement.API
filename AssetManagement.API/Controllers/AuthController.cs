@@ -131,6 +131,7 @@ public class AuthController : ControllerBase
             
             if (string.IsNullOrEmpty(userId) || !Guid.TryParse(userId, out var userGuid))
             {
+
                 return Unauthorized(new ApiResponse<UserDto>
                 {
                     Success = false,

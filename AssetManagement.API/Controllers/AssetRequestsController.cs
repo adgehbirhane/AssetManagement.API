@@ -427,6 +427,15 @@ public class AssetRequestsController : ControllerBase
             var asset = await _context.Assets.FindAsync(assetRequest.AssetId);
             if (asset != null)
             {
+                if (asset.Status == AssetStatus.Assigned)
+                {
+
+                    return BadRequest(new ApiResponse<AssetRequestDto>
+                    {
+                        Success = false,
+                        Message = "This asset is already assigned to another user."
+                    });
+                }
                 asset.Status = AssetStatus.Assigned;
                 asset.AssignedToId = assetRequest.UserId;
                 asset.AssignedAt = DateTime.UtcNow;
