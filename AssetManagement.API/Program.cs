@@ -110,6 +110,7 @@ builder.Services.AddScoped<IPasswordService, PasswordService>();
 
 // Add repositories
 builder.Services.AddScoped<IAssetRequestsRepository, AssetRequestsRepository>();
+builder.Services.AddScoped<IAssetsRepository, AssetsRepository>();
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
