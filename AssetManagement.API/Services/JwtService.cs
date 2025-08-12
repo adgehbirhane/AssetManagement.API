@@ -4,15 +4,9 @@ using System.Security.Cryptography;
 using System.Text;
 using Microsoft.IdentityModel.Tokens;
 using AssetManagement.API.Models;
+using AssetManagement.API.Interfaces;
 
 namespace AssetManagement.API.Services;
-
-public interface IJwtService
-{
-    string GenerateToken(User user);
-    bool ValidateToken(string token);
-    ClaimsPrincipal? GetPrincipalFromToken(string token);
-}
 
 public class JwtService : IJwtService
 {

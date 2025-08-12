@@ -1,13 +1,8 @@
 using System.Security.Cryptography;
 using System.Text;
+using AssetManagement.API.Interfaces;
 
 namespace AssetManagement.API.Services;
-
-public interface IPasswordService
-{
-    string HashPassword(string password);
-    bool VerifyPassword(string password, string hash);
-}
 
 public class PasswordService : IPasswordService
 {

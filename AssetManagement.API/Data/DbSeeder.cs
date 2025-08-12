@@ -1,6 +1,7 @@
 using AssetManagement.API.Models;
 using AssetManagement.API.Services;
 using AssetManagement.API.Enums;
+using AssetManagement.API.Interfaces;
 
 namespace AssetManagement.API.Data;
 
