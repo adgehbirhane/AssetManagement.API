@@ -1,33 +1,49 @@
+using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 
 namespace AssetManagement.API.DTOs;
 
 public class LoginRequest
 {
-    [Required]
-    [EmailAddress]
+    [Required(ErrorMessage = "Email is required.")]
+    [EmailAddress(ErrorMessage = "Invalid email format.")]
+    [MaxLength(255, ErrorMessage = "Email must not exceed 255 characters.")]
+    [DefaultValue("admin@gmail.com")]
     public string Email { get; set; } = string.Empty;
     
-    [Required]
+    [Required(ErrorMessage = "Password is required.")]
+    [MinLength(8, ErrorMessage = "Password must be at least 8 characters long.")]
+    [MaxLength(100, ErrorMessage = "Password must not exceed 100 characters.")]
+    [RegularExpression(@"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]+$",
+        ErrorMessage = "Password must contain at least one uppercase, one lowercase, one number, and one special character.")]
     public string Password { get; set; } = string.Empty;
 }
 
 public class RegisterRequest
 {
-    [Required]
-    [EmailAddress]
+    [Required(ErrorMessage = "Email is required.")]
+    [EmailAddress(ErrorMessage = "Invalid email format.")]
+    [MaxLength(255, ErrorMessage = "Email must not exceed 255 characters.")]
+    [DefaultValue("exampleuser@gmail.com")]
     public string Email { get; set; } = string.Empty;
     
-    [Required]
-    [MinLength(6)]
+    [Required(ErrorMessage = "Password is required.")]
+    [MinLength(8, ErrorMessage = "Password must be at least 8 characters long.")]
+    [MaxLength(100, ErrorMessage = "Password must not exceed 100 characters.")]
+    [RegularExpression(@"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]+$",
+        ErrorMessage = "Password must contain at least one uppercase, one lowercase, one number, and one special character.")]
     public string Password { get; set; } = string.Empty;
     
-    [Required]
-    [MaxLength(100)]
+    [Required(ErrorMessage = "First name is required.")]
+    [MaxLength(100, ErrorMessage = "First name must not exceed 100 characters.")]
+    [RegularExpression(@"^[A-Za-z\-'\s]+$", ErrorMessage = "First name can only contain letters, spaces, apostrophes, and hyphens.")]
+    [DefaultValue("Abebe")]
     public string FirstName { get; set; } = string.Empty;
-    
-    [Required]
-    [MaxLength(100)]
+
+    [Required(ErrorMessage = "Last name is required.")]
+    [MaxLength(100, ErrorMessage = "Last name must not exceed 100 characters.")]
+    [RegularExpression(@"^[A-Za-z\-'\s]+$", ErrorMessage = "Last name can only contain letters, spaces, apostrophes, and hyphens.")]
+    [DefaultValue("Bikila")]
     public string LastName { get; set; } = string.Empty;
 }
 
