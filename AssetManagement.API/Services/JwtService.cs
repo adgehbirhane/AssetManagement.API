@@ -22,9 +22,6 @@ public class JwtService : IJwtService
         var tokenHandler = new JwtSecurityTokenHandler();
         var key = Encoding.ASCII.GetBytes(_configuration["Jwt:Secret"] ?? throw new InvalidOperationException("JWT Secret not configured"));
         
-        Console.WriteLine($"Generating token for user: {user.Email}, ID: {user.Id}, Role: {user.Role}");
-        Console.WriteLine($"JWT Configuration - Secret Length: {key.Length}, Issuer: {_configuration["Jwt:Issuer"]}, Audience: {_configuration["Jwt:Audience"]}");
-        
         var tokenDescriptor = new SecurityTokenDescriptor
         {
             Subject = new ClaimsIdentity(new[]
@@ -43,14 +40,10 @@ public class JwtService : IJwtService
         var token = tokenHandler.CreateToken(tokenDescriptor);
         var tokenString = tokenHandler.WriteToken(token);
         
-        Console.WriteLine($"Token generated successfully. Length: {tokenString.Length}");
-        Console.WriteLine($"Token claims: {string.Join(", ", tokenDescriptor.Subject.Claims.Select(c => $"{c.Type}={c.Value}"))}");
-        
         // Validate the generated token
         try
         {
             var validationResult = ValidateGeneratedToken(tokenString);
-            Console.WriteLine($"Generated token validation: {validationResult}");
         }
         catch (Exception ex)
         {
@@ -92,8 +85,6 @@ public class JwtService : IJwtService
         var tokenHandler = new JwtSecurityTokenHandler();
         var key = Encoding.ASCII.GetBytes(_configuration["Jwt:Secret"] ?? throw new InvalidOperationException("JWT Secret not configured"));
 
-        Console.WriteLine($"Validating token (bool method): {token.Substring(0, Math.Min(50, token.Length))}...");
-
         try
         {
             tokenHandler.ValidateToken(token, new TokenValidationParameters
@@ -108,12 +99,10 @@ public class JwtService : IJwtService
                 ClockSkew = TimeSpan.Zero
             }, out SecurityToken validatedToken);
 
-            Console.WriteLine("Token validation (bool method) successful");
             return true;
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Token validation (bool method) failed: {ex.Message}");
             return false;
         }
     }
@@ -122,8 +111,6 @@ public class JwtService : IJwtService
     {
         var tokenHandler = new JwtSecurityTokenHandler();
         var key = Encoding.ASCII.GetBytes(_configuration["Jwt:Secret"] ?? throw new InvalidOperationException("JWT Secret not configured"));
-
-        Console.WriteLine($"Validating token: {token.Substring(0, Math.Min(50, token.Length))}...");
 
         try
         {
@@ -139,12 +126,10 @@ public class JwtService : IJwtService
                 ClockSkew = TimeSpan.Zero
             }, out SecurityToken validatedToken);
 
-            Console.WriteLine($"Token validation successful. Claims: {string.Join(", ", principal.Claims.Select(c => $"{c.Type}={c.Value}"))}");
             return principal;
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Token validation failed: {ex.Message}");
             return null;
         }
     }

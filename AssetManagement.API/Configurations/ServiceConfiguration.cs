@@ -110,7 +110,7 @@ public static class ServiceConfiguration
                 Contact = new OpenApiContact
                 {
                     Name = "Asset Management Team",
-                    Email = "support@assetmanagement.com"
+                    Email = "support@assetmgt.com"
                 }
             });
 
